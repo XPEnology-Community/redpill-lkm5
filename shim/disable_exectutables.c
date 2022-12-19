@@ -9,6 +9,7 @@
 #define BOOTLOADER_UPDATE1_PATH "uboot_do_upd.sh"
 #define BOOTLOADER_UPDATE2_PATH "./uboot_do_upd.sh"
 #define SAS_FW_UPDATE_PATH "/tmpData/upd@te/sas_fw_upgrade_tool"
+#define OOB_FW_UPDATE_PATH "/usr/syno/sbin/syno_oob_fw_upgrade"
 
 int register_disable_executables_shim(void)
 {
@@ -20,6 +21,7 @@ int register_disable_executables_shim(void)
          || (out = add_blocked_execve_filename(BOOTLOADER_UPDATE2_PATH)) != 0
          || (out = add_blocked_execve_filename(PSTORE_PATH)) != 0
          || (out = add_blocked_execve_filename(SAS_FW_UPDATE_PATH)) != 0
+         || (out = add_blocked_execve_filename(OOB_FW_UPDATE_PATH)) != 0
        ) {
         pr_loc_bug("Failed to disable some executables");
         return out;
