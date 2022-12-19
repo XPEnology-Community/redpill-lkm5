@@ -5,7 +5,7 @@
  * The process relies on the fact that the original BIOS module keeps a vtable table in memory. That vtable contains
  * pointers to various functions used to communicate with the hardware. The most tricky part here is finding the vtable
  * and replacing calls in it with our own. Original ELF contains unscrambled symbols for the table under "synobios_ops"
- * name (see: readelf --syms /usr/lib/modules/synobios-dis.ko | grep 'synobios_ops'). However this is NOT a symbol which
+ * name (see: readelf --syms /usr/lib/modules/synobios.ko | grep 'synobios_ops'). However this is NOT a symbol which
  * gets exported to the kernel.
  *
  * When the Linux kernel loads a module it does a couple of things after loading the .ko file. From the important ones
@@ -25,7 +25,7 @@
  *  arch/x86/kernel/module.c:apply_relocate_add(). Since this function is external it can be "gently" replaced.
  *
  * During the lifetime of apply_relocate_add(), which is redirected to _apply_relocate_add() here, the full ELF with
- * symbol table is available and thus the vtable can be located using process_bios_symbols().  However, it cannot be
+ * symbol table is available and thus the vtable can be located using process_bios_symbols(). However, it cannot be
  * just like that modified at this moment (remember: we're way before module init is called) as 1) functions it points
  * to may be relocated still, and 2) it's hardware-dependent (as seen by doing print_debug_symbols() before & after
  * init). We need to hook to the module notification API and shim what's needed AFTER module started initializing.

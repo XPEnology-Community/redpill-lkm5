@@ -39,6 +39,13 @@ static int bios_get_buz_clr(unsigned char *state)
     return 0;
 }
 
+static int bios_get_power_status(POWER_INFO *power)
+{
+    power->power_1 = POWER_STATUS_GOOD;
+    power->power_2 = POWER_STATUS_GOOD;
+    return 0;
+}
+
 /***************************************** Debug shims for unknown bios functions **************************************/
 DECLARE_NULL_ZERO_INT(VTK_SET_FAN_STATE);
 DECLARE_NULL_ZERO_INT(VTK_SET_DISK_LED);
@@ -137,6 +144,7 @@ bool shim_bios_module(const struct hw_config *hw, struct module *mod, unsigned l
     SHIM_TO_NULL_ZERO_INT(VTK_SET_ALR_LED);
     _shim_bios_module_entry(VTK_GET_BUZ_CLR, bios_get_buz_clr);
     SHIM_TO_NULL_ZERO_INT(VTK_SET_BUZ_CLR);
+    _shim_bios_module_entry(VTK_GET_PWR_STATUS, bios_get_power_status);
     SHIM_TO_NULL_ZERO_INT(VTK_SET_CPU_FAN_STATUS);
     SHIM_TO_NULL_ZERO_INT(VTK_SET_PHY_LED);
     SHIM_TO_NULL_ZERO_INT(VTK_SET_HDD_ACT_LED);
