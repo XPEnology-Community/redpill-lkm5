@@ -28,13 +28,17 @@
 #include <linux/dmi.h> //dmi_get_system_info(), DMI_*
 
 #define DMI_MAX_LEN 512
-#define FW_BOARD_NAME "\x53\x79\x6e\x6f\x64\x65\x6e"
+#define FW_BOARD_NAME "\x53\x79\x6e\x6f\x64\x65\x6e"    //Synoden
 #define FW_UPDATE_PATH "./H2OFFT-Lx64"
 
 static char dmi_product_name_backup[DMI_MAX_LEN] = { '\0' };
 static void patch_dmi(void)
 {
     char *ptr = (char *)dmi_get_system_info(DMI_PRODUCT_NAME);
+    if (unlikely(ptr == 0)) {
+        pr_loc_err("Error getting DMI_PRODUCT_NAME, impossible to patch DMI");
+        return;
+    }
     size_t org_len = strlen(ptr);
     if (org_len > DMI_MAX_LEN)
         pr_loc_wrn("DMI field longer than %zu - restoring on module unload will be limited to that length", org_len);
