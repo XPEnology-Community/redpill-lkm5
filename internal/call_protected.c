@@ -102,7 +102,11 @@ DEFINE_UNEXPORTED_SHIM(struct filename *, getname, CP_LIST(const char __user *na
 #endif
 
 DEFINE_UNEXPORTED_SHIM(int, scsi_scan_host_selected, CP_LIST(struct Scsi_Host *shost, unsigned int channel, unsigned int id, u64 lun, int rescan), CP_LIST(shost, channel, id, lun, rescan), -EIO);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,19,0)
 DEFINE_UNEXPORTED_SHIM(int, ida_pre_get, CP_LIST(struct ida *ida, gfp_t gfp_mask), CP_LIST(ida, gfp_mask), -EINVAL);
+#else
+DEFINE_UNEXPORTED_SHIM(int, ida_alloc_range, CP_LIST(struct ida *ida, unsigned int min, unsigned int max, gfp_t gfp_mask), CP_LIST(ida, min, max, gfp_mask), -EINVAL);
+#endif
 
 DEFINE_UNEXPORTED_SHIM(int, early_serial_setup, CP_LIST(struct uart_port *port), port, -EIO);
 DEFINE_UNEXPORTED_SHIM(int, serial8250_find_port, CP_LIST(struct uart_port *p), CP_LIST(p), -EIO);

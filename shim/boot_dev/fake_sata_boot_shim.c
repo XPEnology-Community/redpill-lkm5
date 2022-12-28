@@ -16,9 +16,10 @@
  * long, and have to be reverted as soon as the disk type is determined by the "sd.c" driver. This is because other
  * processes actually need to read & probe the drive as a SATA one (as you cannot communicate with a SATA device like
  * you do with a USB stick).
- * In a birds-eye view the descriptors are modified just before the sd_probe() is called and removed when ida_pre_get()
- * is called by the sd_probe(). The ida_pre_get() is nearly guaranteed [even if the sd.c code changes] to be called
- * very early in the process as the ID allocation needs to be done for anything else to use structures created within.
+ * In a birds-eye view the descriptors are modified just before the sd_probe() is called and removed when
+ * ida_pre_get/ida_alloc_range() is called by the sd_probe(). The ida_pre_get/ida_alloc_range() is nearly guaranteed
+ * [even if the sd.c code changes] to be called very early in the process as the ID allocation needs to be done for
+ * anything else to use structures created within.
  *
  *
  * HERE BE DRAGONS
@@ -38,8 +39,8 @@
 #include "../../common.h"
 #include "../../internal/scsi/scsi_toolbox.h" //scsi_force_replug()
 #include "../../internal/scsi/scsi_notifier.h" //waiting for the drive to appear
-#include "../../internal/call_protected.h" //ida_pre_get()
-#include "../../internal/override/override_symbol.h" //overriding ida_pre_get()
+#include "../../internal/call_protected.h" //ida_pre_get/ida_alloc_range()
+#include "../../internal/override/override_symbol.h" //overriding ida_pre_get/ida_alloc_range()
 #include <scsi/scsi_device.h> //struct scsi_device
 #include <scsi/scsi_host.h> //struct Scsi_Host, SYNO_PORT_TYPE_*
 #include <linux/usb.h> //struct usb_device
@@ -51,7 +52,7 @@ static const struct boot_media *boot_dev_config = NULL; //passed to scsi_is_shim
 static struct scsi_device *camouflaged_sdp = NULL; //set when ANY device is under camouflage
 static struct usb_device *fake_usbd = NULL; //ptr to our fake usb device scaffolding
 static int org_port_type = 0; //original port type of the device which registered
-static override_symbol_inst *ida_pre_get_ovs = NULL; //trap override
+static override_symbol_inst *ida_X_ovs = NULL; //trap override
 static unsigned long irq_flags = 0; //saved flags when IRQs are disabled (to prevent rescheduling)
 
 //They call each other, see their own docblocks
@@ -62,7 +63,7 @@ struct ida;
 /**
  * Called by the sd_probe() very early after disk type is determined. We can restore the disk to its original shape
  */
-static int ida_pre_get_trap(struct ida *ida, gfp_t gfp_mask)
+static int ida_X_trap(struct ida *ida, gfp_t gfp_mask)
 {
     //This can happen if the kernel decides to reschedule and/or some device appears JUST between setting up the trap
     // and disabling of rescheduling. We cannot reverse the order as setting up the trap requires flushing CPU caches
@@ -70,16 +71,31 @@ static int ida_pre_get_trap(struct ida *ida, gfp_t gfp_mask)
     //It is also possible that it happens during uncamouflage_device - this is why we force-restore here and just call
     // it.
     if (unlikely(!camouflaged_sdp)) {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,19,0)
         pr_loc_bug("Hit ida_pr_get() trap without sdp saved - removing trap and calling original");
-        restore_symbol(ida_pre_get_ovs);
+        restore_symbol(ida_X_ovs);
         return _ida_pre_get(ida, gfp_mask);
+#else
+        pr_loc_bug("Hit ida_alloc_range() trap without sdp saved - removing trap and calling original");
+        restore_symbol(ida_X_ovs);
+        return _ida_alloc_range(ida, 0, ~0, gfp_mask);
+#endif
     }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,19,0)
     pr_loc_dbg("Hit ida_pre_get() trap! Removing camouflage...");
+#else
+    pr_loc_dbg("Hit ida_alloc_range() trap! Removing camouflage...");
+#endif
     uncamouflage_device(camouflaged_sdp);
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,19,0)
     pr_loc_dbg("Calling original ida_pre_get()");
     return _ida_pre_get(ida, gfp_mask);
+#else
+    pr_loc_dbg("Calling original ida_alloc_range()");
+    return _ida_alloc_range(ida, 0, ~0, gfp_mask);
+#endif
 }
 
 /**
@@ -138,13 +154,22 @@ static int camouflage_device(struct scsi_device *sdp)
     kzalloc_or_exit_int(fake_usbd, sizeof(struct usb_device));
     usb_shim_as_boot_dev(boot_dev_config, fake_usbd);
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,19,0)
     pr_loc_dbg("Setting-up ida_pre_get() trap");
-    ida_pre_get_ovs = override_symbol("ida_pre_get", ida_pre_get_trap);
-    if (unlikely(IS_ERR(ida_pre_get_ovs))) {
-        pr_loc_err("Failed to override ida_pre_get - error=%ld", PTR_ERR(ida_pre_get_ovs));
-        ida_pre_get_ovs = NULL;
+    ida_X_ovs = override_symbol("ida_pre_get", ida_X_trap);
+#else
+    pr_loc_dbg("Setting-up ida_alloc_range() trap");
+    ida_X_ovs = override_symbol("ida_alloc_range", ida_X_trap);
+#endif
+    if (unlikely(IS_ERR(ida_X_ovs))) {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,19,0)
+        pr_loc_err("Failed to override ida_pre_get - error=%ld", PTR_ERR(ida_X_ovs));
+#else
+        pr_loc_err("Failed to override ida_alloc_range - error=%ld", PTR_ERR(ida_X_ovs));
+#endif
+        ida_X_ovs = NULL;
         kfree(fake_usbd);
-        return PTR_ERR(ida_pre_get_ovs);
+        return PTR_ERR(ida_X_ovs);
     }
 
     pr_loc_dbg("Disabling rescheduling");
@@ -193,14 +218,18 @@ static int uncamouflage_device(struct scsi_device *sdp)
     pr_loc_dbg("Re-enabling scheduling");
     local_irq_restore(irq_flags);
     preempt_enable();
-
-    if (likely(ida_pre_get_ovs)) { //scheduling race condition may have removed that already in ida_pre_get_trap()
+    if (likely(ida_X_ovs)) { //scheduling race condition may have removed that already in ida_pre_get_trap()
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,19,0)
         pr_loc_dbg("Removing ida_pre_get() trap");
-        if ((out = restore_symbol(ida_pre_get_ovs)) != 0)
+        if ((out = restore_symbol(ida_X_ovs)) != 0)
         pr_loc_err ("Failed to restore original ida_pre_get() - error=%d", out);
-        ida_pre_get_ovs = NULL;
+#else
+        pr_loc_dbg("Removing ida_alloc_range() trap");
+        if ((out = restore_symbol(ida_X_ovs)) != 0)
+        pr_loc_err ("Failed to restore original ida_alloc_range() - error=%d", out);
+#endif
+        ida_X_ovs = NULL;
     }
-
     pr_loc_dbg("Cleaning fake USB descriptor");
     kfree(fake_usbd);
     fake_usbd = NULL;

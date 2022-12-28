@@ -66,7 +66,11 @@ CP_DECLARE_SHIM(int, scsi_scan_host_selected,
                 CP_LIST(struct Scsi_Host *shost, unsigned int channel, unsigned int id, u64 lun, int rescan));
 
 struct ida;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,19,0)
 CP_DECLARE_SHIM(int, ida_pre_get, CP_LIST(struct ida *ida, gfp_t gfp_mask));
+#else
+CP_DECLARE_SHIM(int, ida_alloc_range, CP_LIST(struct ida *ida, unsigned int min, unsigned int max, gfp_t gfp_mask));
+#endif
 
 //Used for fixing I/O scheduler if module was loaded using elevator= and broke it
 CP_DECLARE_SHIM(int, elevator_setup, CP_LIST(char *str));
