@@ -55,6 +55,7 @@
 #include "../internal/helper/symbol_helper.h" //kernel_has_symbol()
 #include "bios/bios_shims_collection.h" //shim_bios_module(), unshim_bios_module(), shim_bios_disk_leds_ctrl()
 #include "bios/bios_hwcap_shim.h" //register_bios_hwcap_shim(), unregister_bios_hwcap_shim(), reset_bios_hwcap_shim()
+#include "bios/bios_psu_status_shim.h" //register_bios_psu_status_shim(), unregister_bios_psu_status_shim(), reset_bios_psu_status_shim()
 #include <linux/notifier.h> //module notification
 #include <linux/module.h> //struct module
 
@@ -103,6 +104,7 @@ static int bios_module_notifier_handler(struct notifier_block * self, unsigned l
         enable_symbols_capture();
         reset_bios_shims();
         reset_bios_hwcap_shim();
+        reset_bios_psu_status_shim();
 
         return NOTIFY_OK;
     }
@@ -125,8 +127,10 @@ static int bios_module_notifier_handler(struct notifier_block * self, unsigned l
         bios_shimmed = true;
         pr_loc_inf("%s BIOS *fully* shimmed", mod->name);
     } else { //MODULE_STATE_COMING or MODULE_STATE_UNFORMED [but most likely actually MODULE_STATE_COMING]
-        if (likely(state == MODULE_STATE_COMING))
+        if (likely(state == MODULE_STATE_COMING)){
             register_bios_hwcap_shim(hw_config);
+            register_bios_psu_status_shim(hw_config);
+        }
 
         pr_loc_inf("%s BIOS *early* shimmed", mod->name);
     }
@@ -274,6 +278,7 @@ int unregister_bios_shim(void)
 
     unshim_disk_leds_ctrl(); //this will be noop if nothing was registered
     unregister_bios_hwcap_shim(); //this will be noop if nothing was registered
+    unregister_bios_psu_status_shim(); //this will be noop if nothing was registered
 
     hw_config = NULL;
 
