@@ -344,8 +344,13 @@ static int _apply_relocate_add(Elf64_Shdr *sechdrs, const char *strtab, unsigned
                 goto overflow;
                 break;
             case R_X86_64_PC32:
+            case R_X86_64_PLT32:
                 val -= (u64)loc;
                 *(u32 *)loc = val;
+                break;
+            case R_X86_64_PC64:
+                val -= (u64)loc;
+                *(u64 *)loc = val;
                 break;
             default:
                 pr_err("%s: Unknown rela relocation: %llu\n",
