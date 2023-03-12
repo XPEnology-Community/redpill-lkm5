@@ -102,9 +102,10 @@ int vuart_enable_interrupts(struct serial8250_16550A_vdev *vdev)
 
     return 0;
 
-    error_unlock_free:
+error_unlock_free:
     unlock_vuart(vdev);
-    error_free:
+
+error_free:
     if (vdev->virq_queue) {
         kfree(vdev->virq_queue);
         vdev->virq_queue = NULL;

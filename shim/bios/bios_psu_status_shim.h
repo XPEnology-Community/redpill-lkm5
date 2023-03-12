@@ -20,4 +20,4 @@ int unregister_bios_psu_status_shim(void);
 int reset_bios_psu_status_shim(void);
 
 
-#endif //REDPILL_BIOS_HWCAP_SHIM_H
+#endif //REDPILL_BIOS_PSU_STATUS_SHIM_H
