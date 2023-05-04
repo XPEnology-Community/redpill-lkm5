@@ -245,9 +245,10 @@ static int bios_hwmon_get_fans_rpm(SYNO_HWMON_SENSOR_TYPE *reading)
     for (int i = 0; i < HWMON_SYS_FAN_RPM_IDS; i++) {
         if (hwmon_cfg->sys_fan_speed_rpm[i] == HWMON_SYS_FAN_NULL_ID)
             break;
-
-        guarded_strscpy(reading->sensor[i].sensor_name, hwmon_sys_fan_id_map[hwmon_cfg->sys_fan_speed_rpm[i]],
-                        sizeof(reading->sensor[i].sensor_name)); //Save the name of the sensor
+        // Save the name of the sensor
+        guarded_strscpy(reading->sensor[i].sensor_name,
+                        hwmon_sys_fan_id_map[hwmon_cfg->sys_fan_speed_rpm[i]],
+                        sizeof(reading->sensor[i].sensor_name));
         hwmon_fans_rpm[i] = prandom_int_range_stable(&hwmon_fans_rpm[i], FAN_SPEED_DEV, FAKE_RPM_MIN, FAKE_RPM_MAX);
         snprintf(reading->sensor[i].value, sizeof(reading->sensor[i].value), "%d", hwmon_fans_rpm[i]);
         ++reading->sensor_num;

@@ -431,8 +431,9 @@ const struct hw_config supported_platforms[] = {
             .sys_thermal = { HWMON_SYS_TZONE_REMOTE1_ID, HWMON_SYS_TZONE_LOCAL_ID, HWMON_SYS_TZONE_REMOTE2_ID },
             .sys_voltage = { HWMON_SYS_VSENS_VCC_ID, HWMON_SYS_VSENS_VPP_ID, HWMON_SYS_VSENS_V33_ID,
                              HWMON_SYS_VSENS_V5_ID, HWMON_SYS_VSENS_V12_ID },
-            .sys_fan_speed_rpm = {HWMON_SYS_FAN1_ID, HWMON_SYS_FAN2_ID },
-            .hdd_backplane = { HWMON_SYS_HDD_BP_DETECT_ID, HWMON_SYS_HDD_BP_ENABLE_ID },
+            // FIXME add NULL ID to workaroud scemd coredump in SA6400 7.2-64551
+            .sys_fan_speed_rpm = { HWMON_SYS_FAN1_ID, HWMON_SYS_FAN2_ID, HWMON_SYS_FAN_NULL_ID },
+            .hdd_backplane = { HWMON_SYS_HDD_BP_DETECT_ID, HWMON_SYS_HDD_BP_NULL_ID },
             .psu_status = { HWMON_PSU_NULL_ID },
             .sys_current = { HWMON_SYS_CURR_NULL_ID },
         }

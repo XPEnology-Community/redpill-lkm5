@@ -105,12 +105,11 @@ static void print_debug_symbols(const unsigned long *vtable_end)
 
     unsigned long *call_ptr = vtable_start;
     unsigned char *byte_ptr = (char *)vtable_start;
-    for (int i = 0; i < im; i++, byte_ptr++) {
-        pr_loc_dbg_raw("%02x ", *byte_ptr);
-        if ((i+1) % 8 == 0) {
-            pr_loc_dbg_raw(" [%02d] 0x%03x \t%p\t%pS\n", i / 8, i-7, (void *) (*call_ptr), (void *) (*call_ptr));
-            call_ptr++;
-        }
+    for (int i = 0; i < im; i+=8, byte_ptr+=8, call_ptr+=8) {
+        pr_loc_dbg_raw("%02x %02x %02x %02x %02x %02x %02x %02x ",
+          *byte_ptr, *byte_ptr+1, *byte_ptr+2, *byte_ptr+3,
+          *byte_ptr+4, *byte_ptr+5, *byte_ptr+6, *byte_ptr+7);
+        pr_loc_dbg_raw("[%02d] 0x%03x \t%p\t%pS\n", i/8, i-7, (void *) (*call_ptr), (void *) (*call_ptr));
     }
     pr_loc_dbg_raw("\n");
 
