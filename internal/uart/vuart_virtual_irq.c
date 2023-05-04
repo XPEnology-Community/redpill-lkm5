@@ -62,7 +62,10 @@ static int virq_thread(void *data)
 
 int vuart_enable_interrupts(struct serial8250_16550A_vdev *vdev)
 {
-    int out;
+    int out, kmc;
+    kmc = 0;
+
+retry:
     pr_loc_dbg("Enabling vIRQ for ttyS%d", vdev->line);
     lock_vuart(vdev);
 
@@ -78,11 +81,18 @@ int vuart_enable_interrupts(struct serial8250_16550A_vdev *vdev)
         goto error_unlock_free;
     }
 
-    if (!(vdev->virq_queue = kmalloc(sizeof(wait_queue_head_t), GFP_KERNEL)) ||
-        !(vdev->virq_thread = kmalloc(sizeof(struct task_struct), GFP_KERNEL))) {
-        out = -ENOMEM;
-        pr_loc_crt("kernel memory alloc failure - tried to reserve memory for vIRQ structures");
-        goto error_unlock_free;
+    // by jim3ma: fix kernel warning log "BUG: sleeping function called from invalid context at mm/slab.h"
+    if (!(vdev->virq_queue = kmalloc(sizeof(wait_queue_head_t), GFP_ATOMIC)) ||
+        !(vdev->virq_thread = kmalloc(sizeof(struct task_struct), GFP_ATOMIC))) {
+        if (kmc == 10) {
+            out = -ENOMEM;
+            pr_loc_crt("kernel memory alloc failure - tried to reserve memory for vIRQ structures");
+            goto error_unlock_free;
+        } else {
+            unlock_vuart(vdev);
+            kmc ++;
+            goto retry;
+        }
     }
 
     init_waitqueue_head(vdev->virq_queue);
