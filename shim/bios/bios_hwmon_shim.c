@@ -242,6 +242,7 @@ static int bios_hwmon_get_fans_rpm(SYNO_HWMON_SENSOR_TYPE *reading)
     guarded_strscpy(reading->type_name, HWMON_SYS_FAN_RPM_NAME, sizeof(reading->type_name));
     hwmon_pr_loc_dbg("mfgBIOS: => %s(type=%s)", __FUNCTION__, reading->type_name);
 
+    reading->sensor_num = 0;
     for (int i = 0; i < HWMON_SYS_FAN_RPM_IDS; i++) {
         if (hwmon_cfg->sys_fan_speed_rpm[i] == HWMON_SYS_FAN_NULL_ID)
             break;
@@ -280,6 +281,7 @@ static int bios_hwmon_get_hdd_backplane(SYNO_HWMON_SENSOR_TYPE *reading)
     guarded_strscpy(reading->type_name, HWMON_HDD_BP_STATUS_NAME, sizeof(reading->type_name));
     hwmon_pr_loc_dbg("mfgBIOS: => %s(type=%s)", __FUNCTION__, reading->type_name);
 
+    reading->sensor_num = 0;
     for (int i = 0; i < HWMON_SYS_HDD_BP_IDS; i++) {
         if (hwmon_cfg->hdd_backplane[i] == HWMON_SYS_HDD_BP_NULL_ID)
             break;
