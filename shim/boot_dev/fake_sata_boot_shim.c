@@ -26,7 +26,7 @@
  * This code is highly experimental and may explode at any moment. We previously thought we cannot do anything with
  * SATA boot due to lack of kernel support for it (and userland method being broken now). This crazy idea actually
  * worked and after many tests on multiple platforms it seems to be stable. However, we advise against using it if USB
- * is an option. Code here has many safety cheks and safeguards but we will never consider it bullet-proof.
+ * is an option. Code here has many safety checks and safeguards but we will never consider it bullet-proof.
  *
  *
  * References:
