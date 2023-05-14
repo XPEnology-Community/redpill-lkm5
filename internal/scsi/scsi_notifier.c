@@ -50,6 +50,7 @@
 #include "scsi_toolbox.h"
 #include "../intercept_driver_register.h" //watching for sd driver loading
 #include <scsi/scsi_device.h> //to_scsi_device()
+#include <scsi/scsi_host.h>
 
 #define NOTIFIER_NAME "SCSI device"
 
@@ -72,6 +73,14 @@ static int sd_probe_shim(struct device *dev)
     if (!is_scsi_disk(sdp)) {
         pr_loc_dbg("%s: new SCSI device connected - not a disk, ignoring", __FUNCTION__);
         return org_sd_probe(dev);
+    }
+
+    // by jim3ma:
+    // dsm 7.2 check syno_port_type in sd_probe, when syno_port_type == 1(SYNO_PORT_TYPE_SATA), the disk is sata
+    // for disks from hba card like Microsemi Adaptec HBA 1000-8i with aacraid driver, syno_port_type is always 0, we need change it to 1(SYNO_PORT_TYPE_SATA), otherwise sd_probe will return error with -22
+    // solution: update syno_port_type in hba driver
+    if (sdp->host->hostt->syno_port_type == 0) {
+        pr_loc_err("syno_port_type is 0, please update syno_port_type and syno_block_info in disk driver");
     }
 
     pr_loc_dbg("Triggering SCSI_EVT_DEV_PROBING notifications");
