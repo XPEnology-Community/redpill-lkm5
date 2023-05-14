@@ -173,6 +173,7 @@ static int bios_hwmon_get_thermal(SYNO_HWMON_SENSOR_TYPE *reading)
     guarded_strscpy(reading->type_name, HWMON_SYS_THERMAL_NAME, sizeof(reading->type_name));
     hwmon_pr_loc_dbg("mfgBIOS: => %s(type=%s)", __FUNCTION__, reading->type_name);
 
+    reading->sensor_num = 0;
     for (int i = 0; i < HWMON_SYS_THERMAL_ZONE_IDS; i++) {
         if (hwmon_cfg->sys_thermal[i] == HWMON_SYS_TZONE_NULL_ID)
             break;
@@ -207,6 +208,7 @@ static int bios_hwmon_get_voltages(SYNO_HWMON_SENSOR_TYPE *reading)
     guarded_strscpy(reading->type_name, HWMON_SYS_VOLTAGE_NAME, sizeof(reading->type_name));
     hwmon_pr_loc_dbg("mfgBIOS: => %s(type=%s)", __FUNCTION__, reading->type_name);
 
+    reading->sensor_num = 0;
     for (int i = 0; i < HWMON_SYS_VOLTAGE_SENSOR_IDS; i++) {
         if (hwmon_cfg->sys_voltage[i] == HWMON_SYS_VSENS_NULL_ID)
             break;
