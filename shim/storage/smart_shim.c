@@ -703,7 +703,7 @@ static int handle_hdio_drive_cmd_ioctl(struct block_device *bdev, fmode_t mode, 
             // use the real serial if it's not empty, other wise use the disk name
             char * disk_serial;
             disk_serial = rp_fetch_block_serial(bdev->bd_disk->disk_name);
-            if (strlen(disk_serial) < 3) {
+            if (disk_serial == NULL || strlen(disk_serial) < 3) {
                 disk_serial = bdev->bd_disk->disk_name;
             }
 
