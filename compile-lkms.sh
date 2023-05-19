@@ -2,9 +2,10 @@
 
 set -e
 
+TOOLKIT_VER="${TOOLKIT_VER:-7.2}"
+
 TMP_PATH="/tmp"
 DEST_PATH="output"
-TOOLKIT_VER="7.1"
 
 mkdir -p "${DEST_PATH}"
 
@@ -20,8 +21,11 @@ function compileLkm() {
   OUT_PATH="${TMP_PATH}/${PLATFORM}"
   mkdir -p "${OUT_PATH}"
   # Compile using docker
-  docker run --rm -t -v "${OUT_PATH}":/output -v "${PWD}":/input \
-    fbelavenuto/syno-toolkit:${PLATFORM}-${TOOLKIT_VER} compile-lkm
+  docker run --rm -t --entrypoint=/usr/bin/compile.sh \
+    -v "${PWD}"/tools/compile.sh:/usr/bin/compile.sh \
+    -v "${PWD}":/input \
+    -v "${OUT_PATH}":/output \
+    ghcr.io/jim3ma/docker-syno-toolkit:${PLATFORM}-${TOOLKIT_VER} compile-lkm
   mv "${OUT_PATH}/redpill-dev.ko" "${DEST_PATH}/rp-${PLATFORM}-${KVER}-dev.ko"
   rm -f "${DEST_PATH}/rp-${PLATFORM}-${KVER}-dev.ko.gz"
   gzip "${DEST_PATH}/rp-${PLATFORM}-${KVER}-dev.ko"
@@ -33,7 +37,6 @@ function compileLkm() {
 
 # Main
 while read PLATFORM KVER; do
-  docker pull fbelavenuto/syno-toolkit:${PLATFORM}-${TOOLKIT_VER}
   compileLkm "${PLATFORM}" "${KVER}" &
 done < PLATFORMS
 wait
