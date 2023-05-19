@@ -373,7 +373,7 @@ static inline void restart_port(struct uart_8250_port *up)
     // because we did swap IRQ values. However, we MUST restart such port not to reinit the hardware (which doesn't
     // care) but to fix the interrupt mapping in the kernel!
     //skip extensive tests - it was working before
-#if LINUX_VERSION_CODE <= KERNEL_VERSION(5,0,0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,14,0)
     port->flags |= UPF_NO_TXEN_TEST;
 #else
     port->quirks |= UPQ_NO_TXEN_TEST;

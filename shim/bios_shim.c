@@ -348,10 +348,12 @@ static int _apply_relocate_add(Elf64_Shdr *sechdrs, const char *strtab, unsigned
                 val -= (u64)loc;
                 *(u32 *)loc = val;
                 break;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,20,0)
             case R_X86_64_PC64:
                 val -= (u64)loc;
                 *(u64 *)loc = val;
                 break;
+#endif
             default:
                 pr_err("%s: Unknown rela relocation: %llu\n",
                        me->name, ELF64_R_TYPE(rel[i].r_info));

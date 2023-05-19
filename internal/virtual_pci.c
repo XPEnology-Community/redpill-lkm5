@@ -176,6 +176,9 @@
 #include <linux/pci_ids.h> //Constants for vendors, classes, and other
 #include <linux/list.h> //list_for_each
 #include <linux/device.h> //device_del
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,18,0)
+#include <../drivers/pci/pci.h> //pci_dev_is_added
+#endif
 
 #define PCIBUS_VIRTUAL_DOMAIN 0x0001 //normal PC buses are (always?) on domain 0, this is just a next one
 #define PCI_DEVICE_NOT_FOUND_VID_DID 0xFFFFFFFF //A special case to detect non-existing devices (per PCI spec)
@@ -545,10 +548,10 @@ int vpci_remove_all_devices_and_buses(void)
     for_each_bus_idx() {
         list_for_each_entry_safe(pci_dev, pci_dev_n, &buses[i]->devices, bus_list) {
             pr_loc_dbg("Detaching vDEV dev=%02x fn=%02x from bus=%02x [add=%d]", PCI_SLOT(pci_dev->devfn),
-#if LINUX_VERSION_CODE <= KERNEL_VERSION(5,0,0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,18,0)
                        PCI_FUNC(pci_dev->devfn), buses[i]->number, pci_dev->is_added);
 #else
-                       PCI_FUNC(pci_dev->devfn), buses[i]->number, 0);  // Not found a replacement for pci_dev->is_added
+                       PCI_FUNC(pci_dev->devfn), buses[i]->number, pci_dev_is_added(pci_dev));
 #endif
             pci_stop_and_remove_bus_device(pci_dev);
         }
